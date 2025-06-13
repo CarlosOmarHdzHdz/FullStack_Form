@@ -8,10 +8,9 @@ COPY package*.json tsconfig.json ./
 RUN npm install
 # Copia el código fuente
 COPY src ./src
-# Expone el puerto donde corre tu API (asegúrate que coincide con tu app, p.ej., 3000)
+# Expone el puerto donde corre tu API
 EXPOSE 3000
-
-# CAMBIO AQUÍ: Usa el formato de shell para que && funcione correctamente
+# Comando para producción (compila y luego ejecuta el JS compilado)
 CMD ["sh", "-c", "npm run build && npm start"]
 
 # Comando para desarrollo (puedes cambiar por otro si usas build separado)

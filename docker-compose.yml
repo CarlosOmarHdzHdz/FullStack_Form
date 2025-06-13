@@ -16,14 +16,33 @@ services:
     ports:
       - "3001:3000"
     env_file:
-      - ./server/.env
+      - ./server/.env # Usará el .env para otras variables, pero DB_URL se define aquí
     networks:
       - app-network
     environment:
       NODE_ENV: development
-      # Si tuvieras una DB_URL, la definirías aquí o en el .env del server
-      # DB_URL: ${DB_URL}
+      # La DB_URL para el servidor apunta al servicio 'db' dentro de la red Docker Compose
+      DB_URL: postgres://rest_api_nod_typescrip_user:BHm13Hiw4wV0DJy2lxcfGRir7t9SBqUM@db:5432/rest_api_nod_typescrip # <--- Usa la contraseña y el nombre de DB reales para el entorno local
     restart: unless-stopped
+    depends_on: # El servidor ahora depende de la base de datos
+      - db
+
+  db: # Nuevo servicio para PostgreSQL (solo para desarrollo local con Docker Compose)
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rest_api_nod_typescrip_user # <--- Coincide con el usuario en DB_URL del server
+      POSTGRES_PASSWORD: BHm13Hiw4wV0DJy2lxcfGRir7t9SBqUM # <--- Coincide con la contraseña en DB_URL del server
+      POSTGRES_DB: rest_api_nod_typescrip # <--- Coincide con el nombre de DB en DB_URL del server
+    volumes:
+      - db-data:/var/lib/postgresql/data # Persistencia de datos
+    ports:
+      - "5432:5432" # Opcional: para acceder a la DB desde tu máquina host
+    networks:
+      - app-network
+
+volumes:
+  db-data: # Define el volumen para la persistencia de datos de la DB
 
 networks:
   app-network:

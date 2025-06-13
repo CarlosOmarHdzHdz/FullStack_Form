@@ -1,40 +1,43 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { connectDatabase, sequelize } from './config/database';
+import { FormEntry } from './models/FormEntry';
 
-dotenv.config(); // Carga las variables de entorno desde .env
+dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000; // Usa el puerto de la variable de entorno o 3000
+const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors()); // Habilita CORS para permitir peticiones desde el frontend
-app.use(express.json()); // Habilita el parsing de JSON en el cuerpo de las peticiones
+app.use(cors());
+app.use(express.json());
 
-// Ruta de prueba
+connectDatabase(); // Conecta a la base de datos al iniciar la app
+
 app.get('/', (req, res) => {
-  res.send('API del formulario funcionando!');
+  res.send('API del formulario funcionando con base de datos!');
 });
 
-// Ruta para enviar el formulario
-app.post('/submit', (req, res) => {
+app.post('/submit', async (req, res) => {
   const { name, email, message } = req.body;
 
   if (!name || !email || !message) {
     return res.status(400).json({ message: 'Todos los campos son requeridos.' });
   }
 
-  console.log('Formulario recibido:');
-  console.log(`Nombre: ${name}`);
-  console.log(`Email: ${email}`);
-  console.log(`Mensaje: ${message}`);
-
-  // Aquí podrías guardar los datos en una base de datos, enviar un email, etc.
-  // Por ahora, solo enviaremos una respuesta de éxito.
-  res.status(200).json({ message: 'Formulario enviado con éxito. ¡Gracias!' });
+  try {
+    const newEntry = await FormEntry.create({ name, email, message });
+    console.log('Formulario recibido y guardado:', newEntry.toJSON());
+    res.status(200).json({ message: 'Formulario enviado y guardado con éxito. ¡Gracias!' });
+  } catch (error: any) {
+    console.error('Error al guardar el formulario en la base de datos:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'Este email ya ha sido registrado.' });
+    }
+    res.status(500).json({ message: 'Error interno del servidor al guardar el formulario.' });
+  }
 });
 
-// Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor backend corriendo en http://localhost:${port}`);
 });
